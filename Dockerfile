@@ -1,6 +1,6 @@
 # ---- Builder Stage ----
 # Installs dependencies into a virtual environment.
-FROM python:3.11-slim as builder
+FROM python:3.11-slim AS builder
 
 ENV POETRY_VIRTUALENVS_CREATE=false PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 
@@ -15,6 +15,9 @@ ENV PATH="/opt/venv/bin:$PATH"
 
 # Copy and install only production requirements
 COPY requirements.txt ./
+# First, install a CPU-only version of torch to avoid large CUDA dependencies
+RUN pip install --no-cache-dir torch --extra-index-url https://download.pytorch.org/whl/cpu
+# Then, install the rest of the requirements
 RUN pip install --no-cache-dir -r requirements.txt
 
 
