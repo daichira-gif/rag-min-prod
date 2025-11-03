@@ -65,7 +65,6 @@ def query(req: QueryReq, conn: Any = Depends(get_conn), x_user_id: Optional[str]
 
     # A/B bucket
     bucket = bucket_for_user(x_user_id or "anon", s.AB_DEFAULT_BUCKET)
-    print(f"DEBUG: Received x-user-id='{x_user_id}', calculated bucket='{bucket}'")
     prompt_file = s.PROMPT_VERSION_A if bucket=="A" else s.PROMPT_VERSION_B
     try:
         with open(f"src/rag/prompts/{prompt_file}", "r", encoding="utf-8") as f:
