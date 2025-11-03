@@ -43,6 +43,7 @@ jobs:
           pip install -r requirements.txt -r requirements-dev.txt
       - name: Init DB schema
         run: |
+          sed -i 's/vector(1536)/vector(384)/g' scripts/init_db.sql
           PGPASSWORD=ragpassword psql -h localhost -U rag -d rag -c "CREATE EXTENSION IF NOT EXISTS vector;"
           psql -h localhost -U rag -d rag -f scripts/init_db.sql
       - name: Lint

@@ -6,11 +6,6 @@ CREATE TABLE documents (
   id SERIAL PRIMARY KEY,
   content TEXT NOT NULL,
   metadata JSONB DEFAULT '{}'::jsonb,
-  embedding vector(384)
+  embedding vector(1536)
 );
 
--- ivfflat index (requires ANALYZE, and best with suitable lists)
-DROP INDEX IF EXISTS idx_documents_embedding;
-CREATE INDEX idx_documents_embedding ON documents USING ivfflat (embedding vector_cosine_ops) WITH (lists = 100);
-
-ANALYZE documents;
