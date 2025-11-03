@@ -10,6 +10,27 @@ This is a minimal-but-production-minded RAG template with:
 - **A/B testing** scaffolding for prompts/models
 - **Security/Governance**: PII masking, prompt-injection tests, retention knobs
 
+## Architecture Overview
+
+This diagram shows the request flow for a `/query` request.
+
+```text
++-------+      1. /query     +---------------------+      3. Embed Query     +------------------+
+| User  | -----------------> | FastAPI Application | ----------------------> |   Embedding      |
++-------+                  | (Docker Container)  |                         | (OpenAI/Local)   |
+                           +---------------------+                         +------------------+
+                                 ^      |
+                           8.     |      | 4. Vector Search
+                        Response  |      v
+                                  |  +---------------------+
+                                  |  | VectorStore         |
+                                  |  +---------------------+
+                                  |            | 5. SQL Query
+                                  |            v
+                                  +->[PostgreSQL/pgvector]
+                                       (Docker Container)
+```
+
 ## Quickstart
 
 This guide will get you up and running.
@@ -102,13 +123,82 @@ curl -X POST "http://localhost:8000/query" \
   -d '''{"query":"What is this project?"}'''
 ```
 
+## Configuration (Environment Variables)
+
+All configuration is managed via environment variables in the `.env` file.
+
+| Variable                      | Description                                                              | Default Value                               |
+| ----------------------------- | ------------------------------------------------------------------------ | ------------------------------------------- |
+| `APP_ENV`                     | The application environment (e.g., `dev`, `prod`).                       | `dev`                                       |
+| `HOST`                        | The host address for the app to listen on.                               | `0.0.0.0`                                   |
+| `PORT`                        | The port for the app to listen on.                                       | `8000`                                      |
+| `PGHOST`                      | Hostname of the PostgreSQL database.                                     | `db`                                        |
+| `PGPORT`                      | Port of the PostgreSQL database.                                         | `5432`                                      |
+| `PGDATABASE`                  | The name of the database to use.                                         | `rag`                                       |
+| `PGUSER`                      | Username for the database connection.                                    | `rag`                                       |
+| `PGPASSWORD`                  | Password for the database connection.                                    | `ragpassword`                               |
+| `EMBED_DIM`                   | The dimension of the vectors. **Must match the model being used.**       | `1536`                                      |
+| `EMBEDDER_PROVIDER`           | The embedding provider to use (`openai` or `sentence_transformers`).     | `openai`                                    |
+| `OPENAI_API_KEY`              | Your OpenAI API key. Required if provider is `openai`.                   | `None`                                      |
+| `SENTENCE_TRANSFORMERS_MODEL` | The specific Sentence Transformers model to use.                         | `sentence-transformers/all-MiniLM-L6-v2`    |
+| `AB_DEFAULT_BUCKET`           | The default bucket (`A` or `B`) for A/B testing if a user cannot be bucketed. | `A`                                         |
+| `PROMPT_VERSION_A`            | The filename of the prompt for bucket A.                                 | `prompt_v1.txt`                             |
+| `PROMPT_VERSION_B`            | The filename of the prompt for bucket B.                                 | `prompt_v2.txt`                             |
+| `MODEL_VERSION_A`             | The model version for bucket A.                                          | `gpt-4o-mini`                               |
+| `MODEL_VERSION_B`             | The model version for bucket B.                                          | `gpt-4.1-mini`                              |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | The endpoint for the OpenTelemetry collector. Leave empty to disable.    | `None`                                      |
+| `LOG_LEVEL`                   | The logging level for the application.                                   | `INFO`                                      |
+| `RETENTION_DAYS`              | Defines the intended data retention period in days. (See note below).    | `30`                                        |
+| `MASK_PII_IN_LOGS`            | If `true`, masks Personally Identifiable Information (PII) in logs.        | `True`                                      |
+| `ALLOW_PROMPT_INJECTION_TESTS`| A flag used by security tests.                                           | `True`                                      |
+
 ## CI/CD
 
 This repository is configured with GitHub Actions for CI/CD:
 - **CI (`ci.yml`):** Automatically runs linting and tests on every push to the `main` branch or on any pull request. This ensures code quality and prevents regressions.
 - **Release (`release.yml`):** When a Git tag matching the pattern `v*.*.*` (e.g., `v0.1.0`) is pushed, this workflow automatically builds a versioned Docker image, pushes it to GitHub Packages, and creates a corresponding GitHub Release.
 
+## Project layout
+
+```text
+rag-min-prod/
+  .env.sample
+  docker-compose.yml
+  Dockerfile
+  requirements.txt
+  requirements-dev.txt
+  src/
+    app.py
+    rag/
+      __init__.py
+      config.py
+      embeddings.py
+      store.py
+      retriever.py
+      evaluator.py
+      pii.py
+      observability.py
+      abtest.py
+      security.py
+      prompts/
+        prompt_v1.txt
+        prompt_v2.txt
+    tests/
+      test_smoke.py
+      test_regression.py
+      test_prompt_injection.py
+  scripts/
+    init_db.sql
+    seed.py
+    bench.py
+  .github/workflows/ci.yml
+  .github/workflows/release.yml
+```
+
 ## Notes
 
-- The default embedding dimension is **1536** (for OpenAI `text-embedding-3-small`). If you switch to a different model (e.g., a 384-dimension MiniLM model) in your `.env` file, remember to also adjust the `embedding vector(1536)` line in `scripts/init_db.sql` to match.
-- OpenTelemetry tracing is opt-in. To enable it, set the `OTEL_EXPORTER_OTLP_ENDPOINT` in your `.env` file to point to a collector (e.g., Jaeger, Datadog).
+- **Embedding Dimension**: The default embedding dimension is **1536** (for OpenAI `text-embedding-3-small`). If you switch to a different model (e.g., a 384-dimension MiniLM model) in your `.env` file, remember to also adjust the `embedding vector(1536)` line in `scripts/init_db.sql` to match.
+
+- **OpenTelemetry**: Tracing is opt-in. To enable it, set the `OTEL_EXPORTER_OTLP_ENDPOINT` in your `.env` file to point to a collector (e.g., Jaeger, Datadog).
+
+- **Data Retention Policy**: The `.env` file includes a `RETENTION_DAYS` setting, which is intended to define a data retention policy. Please note that the logic for automatically deleting documents older than this specified period **is not yet implemented** in the current version of this project. A future improvement would be to add a scheduled background task that periodically removes old documents from the database.
