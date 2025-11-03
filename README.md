@@ -106,11 +106,20 @@ curl -X POST "http://localhost:8000/query" \
 
 ### 3. Running Automated Tests
 
-This project comes with a suite of automated tests. To run them, execute `pytest` inside the `app` container. You must set the `PYTHONPATH` for the tests to find the source code.
+This project comes with a suite of automated tests that are automatically executed by our CI pipeline on every push and pull request (see `.github/workflows/ci.yml`).
 
+For local development, you can run tests by installing the development dependencies and running `pytest` directly on your host machine or in a dedicated virtual environment.
+
+First, ensure you have the development requirements installed:
 ```bash
-docker compose exec -e PYTHONPATH=. app pytest -v
+pip install -r requirements-dev.txt
 ```
+
+Then, run the tests:
+```bash
+PYTHONPATH=. pytest -v
+```
+This approach keeps the production Docker image lean and secure by excluding testing tools.
 
 ### 4. A/B Testing
 

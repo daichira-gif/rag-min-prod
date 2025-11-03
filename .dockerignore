@@ -1,0 +1,18 @@
+# Git
+.git
+.gitignore
+
+# Cache
+.pytest_cache/
+__pycache__/
+.ruff_cache/
+
+# Env files
+.env
+.env.sample
+
+# Documentation & Config
+*.md
+.pre-commit-config.yaml
+rag-min-prod.code-workspace
+test_db.py
