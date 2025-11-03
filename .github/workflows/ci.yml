@@ -27,7 +27,7 @@ jobs:
       PGDATABASE: rag
       PGUSER: rag
       PGPASSWORD: ragpassword
-      EMBED_DIM: 1536
+      EMBED_DIM: 384
       EMBEDDER_PROVIDER: sentence_transformers
       SENTENCE_TRANSFORMERS_MODEL: sentence-transformers/all-MiniLM-L6-v2
 

@@ -6,7 +6,7 @@ CREATE TABLE documents (
   id SERIAL PRIMARY KEY,
   content TEXT NOT NULL,
   metadata JSONB DEFAULT '{}'::jsonb,
-  embedding vector(1536)
+  embedding vector(384)
 );
 
 -- ivfflat index (requires ANALYZE, and best with suitable lists)
