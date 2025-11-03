@@ -48,4 +48,6 @@ jobs:
       - name: Lint
         run: ruff check .
       - name: Tests
+        env:
+          PYTHONPATH: .
         run: pytest -q
