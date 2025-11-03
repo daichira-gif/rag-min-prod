@@ -90,7 +90,7 @@ curl -X POST "http://localhost:8000/ingest" \
 
 ### 2. Querying
 
-To ask a question, send a POST request to the `/query` endpoint. The system will find relevant documents and use them to generate an answer.
+To ask a question, send a POST request to the `/query` endpoint.
 
 ```bash
 curl -X POST "http://localhost:8000/query" \
@@ -99,9 +99,9 @@ curl -X POST "http://localhost:8000/query" \
 ```
 
 > **Note for Windows PowerShell users:**
-> `curl` is an alias for `Invoke-WebRequest` in PowerShell and has a different syntax. Use this format instead:
+> `curl` is an alias for `Invoke-WebRequest` in PowerShell and has a different syntax. For API testing, `Invoke-RestMethod` is often more convenient. Use this format:
 > ```powershell
-> curl -Method POST -Uri "http://localhost:8000/query" -Headers @{ "Content-Type" = "application/json" } -Body '''{"query":"Who created Gemini?"}'''
+> Invoke-RestMethod -Uri http://localhost:8000/query -Method Post -Headers @{ "Content-Type" = "application/json" } -Body '''{"query":"Who created Gemini?"}'''
 > ```
 
 ### 3. Running Automated Tests
@@ -122,6 +122,30 @@ curl -X POST "http://localhost:8000/query" \
   -H "x-user-id: user-123" \
   -d '''{"query":"What is this project?"}'''
 ```
+
+### 5. Interactive API Docs (Swagger UI)
+
+FastAPI automatically generates interactive API documentation. While the application is running, navigate to [http://localhost:8000/docs](http://localhost:8000/docs) in your browser. This UI allows you to see all available endpoints and test them directly from your browser.
+
+### 6. Testing Observability (OpenTelemetry + Jaeger)
+
+This project is configured to send trace data using OpenTelemetry. You can visualize these traces locally using Jaeger.
+
+1.  **Start Jaeger:** Run the all-in-one Jaeger container in a separate terminal.
+    ```bash
+    docker run -d --name jaeger \
+      -e COLLECTOR_OTLP_ENABLED=true \
+      -p 16686:16686 \
+      -p 4317:4317 \
+      jaegertracing/all-in-one:latest
+    ```
+2.  **Configure `.env`:** Set the OTel endpoint in your `.env` file.
+    ```
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317
+    ```
+3.  **Restart the App:** `docker compose restart app`
+4.  **Send a Query:** Make a request to the `/query` endpoint.
+5.  **View Traces:** Open the Jaeger UI at [http://localhost:16686](http://localhost:16686) in your browser. Select the `rag-min-prod` service to see the detailed trace of your request.
 
 ## Configuration (Environment Variables)
 
@@ -158,42 +182,11 @@ This repository is configured with GitHub Actions for CI/CD:
 - **CI (`ci.yml`):** Automatically runs linting and tests on every push to the `main` branch or on any pull request. This ensures code quality and prevents regressions.
 - **Release (`release.yml`):** When a Git tag matching the pattern `v*.*.*` (e.g., `v0.1.0`) is pushed, this workflow automatically builds a versioned Docker image, pushes it to GitHub Packages, and creates a corresponding GitHub Release.
 
-## Project layout
+## Future Enhancements
 
-```text
-rag-min-prod/
-  .env.sample
-  docker-compose.yml
-  Dockerfile
-  requirements.txt
-  requirements-dev.txt
-  src/
-    app.py
-    rag/
-      __init__.py
-      config.py
-      embeddings.py
-      store.py
-      retriever.py
-      evaluator.py
-      pii.py
-      observability.py
-      abtest.py
-      security.py
-      prompts/
-        prompt_v1.txt
-        prompt_v2.txt
-    tests/
-      test_smoke.py
-      test_regression.py
-      test_prompt_injection.py
-  scripts/
-    init_db.sql
-    seed.py
-    bench.py
-  .github/workflows/ci.yml
-  .github/workflows/release.yml
-```
+This project provides a solid foundation. Here are some potential next steps to make it even more robust:
+
+- **Database Migrations (Alembic):** Currently, the database schema is managed by a single `init_db.sql` file. For team-based development or more complex schema changes over time, introducing a migration tool like [Alembic](https://alembic.sqlalchemy.org/) is highly recommended. This allows for version-controlled, repeatable, and reversible changes to the database structure.
 
 ## Notes
 
