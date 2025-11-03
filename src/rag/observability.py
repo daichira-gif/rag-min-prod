@@ -9,7 +9,7 @@ def setup_logging(level: str = "INFO", mask_pii: bool = True):
         structlog.processors.JSONRenderer(),
     ]
     structlog.configure(
-        processors=processors,
+        processors=processors,  # type: ignore[arg-type]
         logger_factory=structlog.stdlib.LoggerFactory(),
     )
     logging.basicConfig(level=getattr(logging, level.upper(), logging.INFO))
