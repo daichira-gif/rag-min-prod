@@ -1,4 +1,5 @@
-import time, json, requests
+import time
+import requests
 
 def bench_query(n=10):
     t0 = time.time()

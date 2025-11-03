@@ -1,6 +1,7 @@
 from __future__ import annotations
-import os, json, psycopg2
-from fastapi import FastAPI, Request, Header, Depends
+import json
+import psycopg2
+from fastapi import FastAPI, Header, Depends
 from pydantic import BaseModel
 from typing import Optional, Dict, Any
 from .rag.config import Settings

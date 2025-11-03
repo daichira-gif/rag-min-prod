@@ -1,4 +1,5 @@
-import os, logging, structlog
+import logging
+import structlog
 from .config import Settings
 
 def setup_logging(level: str = "INFO", mask_pii: bool = True):

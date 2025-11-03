@@ -1,5 +1,4 @@
-import hashlib, random
-from .config import Settings
+import hashlib
 
 def bucket_for_user(user_key: str, default_bucket: str = "A") -> str:
     if not user_key:

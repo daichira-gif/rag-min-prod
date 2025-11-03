@@ -1,5 +1,4 @@
 from __future__ import annotations
-import os, numpy as np
 from typing import List
 from .config import Settings
 

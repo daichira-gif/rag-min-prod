@@ -1,12 +1,10 @@
 ﻿from __future__ import annotations
 from typing import List, Dict, Any, Tuple
 
-import psycopg2
 from psycopg2.extras import Json
 from pgvector.psycopg2 import register_vector
 import numpy as np
 
-from .config import Settings
 
 
 class VectorStore:
