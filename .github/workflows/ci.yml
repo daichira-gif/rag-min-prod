@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: ankane/pgvector:latest
+        env:
+          POSTGRES_DB: rag
+          POSTGRES_USER: rag
+          POSTGRES_PASSWORD: ragpassword
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd="pg_isready -U rag"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: rag
+      PGUSER: rag
+      PGPASSWORD: ragpassword
+      EMBED_DIM: 1536
+      EMBEDDER_PROVIDER: sentence_transformers
+      SENTENCE_TRANSFORMERS_MODEL: sentence-transformers/all-MiniLM-L6-v2
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt -r requirements-dev.txt
+      - name: Init DB schema
+        run: |
+          PGPASSWORD=ragpassword psql -h localhost -U rag -d rag -c "CREATE EXTENSION IF NOT EXISTS vector;"
+          psql -h localhost -U rag -d rag -f scripts/init_db.sql
+      - name: Lint
+        run: ruff check .
+      - name: Tests
+        run: pytest -q
