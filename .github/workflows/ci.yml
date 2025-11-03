@@ -46,6 +46,8 @@ jobs:
           sed -i 's/vector(1536)/vector(384)/g' scripts/init_db.sql
           PGPASSWORD=ragpassword psql -h localhost -U rag -d rag -c "CREATE EXTENSION IF NOT EXISTS vector;"
           psql -h localhost -U rag -d rag -f scripts/init_db.sql
+      - name: Type Check with mypy
+        run: mypy src
       - name: Lint
         run: ruff check .
       - name: Tests
