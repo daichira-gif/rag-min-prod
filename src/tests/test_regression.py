@@ -1,4 +1,6 @@
-import os, pytest, psycopg2
+import os
+import pytest
+import psycopg2
 from src.rag.config import Settings
 from src.rag.embeddings import Embedder
 from src.rag.store import VectorStore
